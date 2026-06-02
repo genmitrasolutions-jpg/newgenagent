@@ -1,7 +1,7 @@
 """
 scheduler.py — LinkedIn Auto-Post Scheduler
 Research at 8:00 AM → Generate at 8:30 AM → Schedule at 8:50 AM
-Then publishes at: 09:00 / 10:30 / 11:45 / 13:30 / 16:00
+Then publishes at: 09:00 / 10:30 / 12:00 / 14:00 / 16:00
 """
 
 import signal

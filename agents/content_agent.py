@@ -26,9 +26,9 @@ POST_SLOT_CONTEXT = {
 
     1: "10:30 AM — AI Tool / Useful Resource (Focus: AI Tool Spotlight, SaaS releases, productivity tips, useful tech resources)",
 
-    2: "11:45 AM — Trending Tech News #1 (Focus: breaking general technology news, acquisitions, hardware, major tech company announcements from Apple, NVIDIA, Microsoft, etc.)",
+    2: "12:00 PM — Trending Tech News #1 (Focus: breaking general technology news, acquisitions, hardware, major tech company announcements from Apple, NVIDIA, Microsoft, etc.)",
 
-    3: "1:30 PM — Trending AI News #2 (Focus: AI research, breakthroughs, industry insights, and analysis of AI developments)",
+    3: "2:00 PM — Trending AI News #2 (Focus: AI research, breakthroughs, industry insights, and analysis of AI developments)",
 
     4: "4:00 PM — Trending Tech News #2 (Focus: breaking tech developments, launches, or Samsung/GitHub/NVIDIA updates)",
 

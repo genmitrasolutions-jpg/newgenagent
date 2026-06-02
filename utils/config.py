@@ -46,8 +46,8 @@ class Config:
     POST_TIMES: list[str] = [
         os.getenv("POST_TIME_1", "09:00"),
         os.getenv("POST_TIME_2", "10:30"),
-        os.getenv("POST_TIME_3", "11:45"),
-        os.getenv("POST_TIME_4", "13:30"),
+        os.getenv("POST_TIME_3", "12:00"),
+        os.getenv("POST_TIME_4", "14:00"),
         os.getenv("POST_TIME_5", "16:00"),
     ]
 

@@ -98,6 +98,11 @@ def create_app() -> Flask:
         try:
             from engine.analytics import Analytics
             a = Analytics()
+            # Refresh stats from LinkedIn API in real-time
+            try:
+                a.update_all()
+            except Exception as ae:
+                logger.warning(f"Real-time analytics refresh failed: {ae}")
             s = a.get_summary()
             i = a.get_optimization_insights()
             return jsonify({**s, "insights": i})

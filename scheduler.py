@@ -209,8 +209,12 @@ def start_scheduler():
         scheduler.shutdown()
         sys.exit(0)
 
-    signal.signal(signal.SIGINT,  _shutdown)
-    signal.signal(signal.SIGTERM, _shutdown)
+    try:
+        signal.signal(signal.SIGINT,  _shutdown)
+        signal.signal(signal.SIGTERM, _shutdown)
+    except ValueError:
+        # Ignore when running as a background thread inside Flask
+        pass
     scheduler.start()
 
 

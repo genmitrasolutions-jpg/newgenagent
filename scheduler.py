@@ -112,7 +112,20 @@ def make_publish_fn(slot: int):
 
             posts = ContentAgent.load_today()
             if not posts:
-                logger.error("No posts found — pipeline not complete")
+                logger.warning("No posts found on disk — running self-healing auto-regeneration...")
+                try:
+                    from agents.research_agent import ResearchAgent
+                    topics = ResearchAgent.load_today()
+                    if not topics:
+                        logger.info("No research data found — running research agent...")
+                        topics = ResearchAgent().run()
+                    posts = ContentAgent().run(topics)
+                except Exception as ex:
+                    logger.error(f"Self-healing auto-regeneration failed: {ex}")
+                    return
+
+            if not posts:
+                logger.error("Failed to load or regenerate posts — aborting publish")
                 return
 
             agent = LinkedInAgent()

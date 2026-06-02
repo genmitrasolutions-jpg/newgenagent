@@ -1,6 +1,6 @@
 """
 
-agents/content_agent.py â€” LinkedIn Text Post Generator
+agents/content_agent.py — LinkedIn Text Post Generator
 
 Creates Hook + Story + Takeaway + CTA + Mentions + Hashtags
 
@@ -22,15 +22,15 @@ logger = get_logger("content")
 
 POST_SLOT_CONTEXT = {
 
-    0: "9:00 AM â€” Trending AI News #1 (Focus: breaking AI announcements, launches, major releases from Google, OpenAI, Anthropic, NVIDIA, xAI, etc.)",
+    0: "9:00 AM — Trending AI News #1 (Focus: breaking AI announcements, launches, major releases from Google, OpenAI, Anthropic, NVIDIA, xAI, etc.)",
 
-    1: "10:30 AM â€” AI Tool / Useful Resource (Focus: AI Tool Spotlight, SaaS releases, productivity tips, useful tech resources)",
+    1: "10:30 AM — AI Tool / Useful Resource (Focus: AI Tool Spotlight, SaaS releases, productivity tips, useful tech resources)",
 
-    2: "11:45 AM â€” Trending Tech News #1 (Focus: breaking general technology news, acquisitions, hardware, major tech company announcements from Apple, NVIDIA, Microsoft, etc.)",
+    2: "11:45 AM — Trending Tech News #1 (Focus: breaking general technology news, acquisitions, hardware, major tech company announcements from Apple, NVIDIA, Microsoft, etc.)",
 
-    3: "1:30 PM â€” Trending AI News #2 (Focus: AI research, breakthroughs, industry insights, and analysis of AI developments)",
+    3: "1:30 PM — Trending AI News #2 (Focus: AI research, breakthroughs, industry insights, and analysis of AI developments)",
 
-    4: "4:00 PM â€” Trending Tech News #2 (Focus: breaking tech developments, launches, or Samsung/GitHub/NVIDIA updates)",
+    4: "4:00 PM — Trending Tech News #2 (Focus: breaking tech developments, launches, or Samsung/GitHub/NVIDIA updates)",
 
 }
 
@@ -106,7 +106,7 @@ class ContentAgent:
 
                 self.gemini = genai.GenerativeModel("gemini-3.5-flash")
 
-                logger.info("Gemini initialized for content âœ“")
+                logger.info("Gemini initialized for content ✓")
 
             except Exception as e:
 
@@ -154,7 +154,7 @@ class ContentAgent:
 
         })
 
-        logger.info(f"Content generation complete â€” {len(posts)} posts ready")
+        logger.info(f"Content generation complete — {len(posts)} posts ready")
 
         return posts
 
@@ -212,8 +212,8 @@ Return ONLY a valid JSON object:
             resp = self.gemini.generate_content(prompt)
             text = resp.text.strip()
             if "```" in text:
-                text = re.sub(r"^```(?:json)?\n?", "", text)
-                text = re.sub(r"\n?```$", "", text)
+                text = re.sub(r"^```(':json)'\n'", "", text)
+                text = re.sub(r"\n'```$", "", text)
             data = json.loads(text)
             return self._build_post(topic, data, slot)
         except Exception as e:
@@ -258,7 +258,7 @@ Return ONLY a valid JSON object:
 
             parts.append(f"\n{mentions}")
 
-        parts.append("\n\n\nðŸ”¥ Tech Stuff\nFollow for daily AI & Tech updates.")
+        parts.append("\n\n\n🔥 Tech Stuff\nFollow for daily AI & Tech updates.")
 
         parts.append(f"\n{hashtags}")
 
@@ -326,7 +326,7 @@ Return ONLY a valid JSON object:
 
         angle   = topic.get("viral_angle", "AI is reshaping business")
 
-        hook    = f"ðŸš¨ {title}"
+        hook    = f"🚨 {title}"
 
         body = (
 
@@ -342,7 +342,7 @@ Return ONLY a valid JSON object:
 
         )
 
-        cta = "ðŸ’¡ What do you think â€” is this a game-changer for the industry?"
+        cta = "💡 What do you think — is this a game-changer for the industry'"
 
         hashtags = self._build_hashtags(topic, "")
 
@@ -352,7 +352,7 @@ Return ONLY a valid JSON object:
 
             full_post,
 
-            "\n\n\nðŸ”¥ Tech Stuff\nFollow for daily AI & Tech updates.",
+            "\n\n\n🔥 Tech Stuff\nFollow for daily AI & Tech updates.",
 
             f"\n{hashtags}"
 

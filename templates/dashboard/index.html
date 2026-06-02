@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ brand }} — LinkedIn AI Automation</title>
+  <meta name="description" content="Autonomous LinkedIn content automation — research, generate and publish 5 professional posts daily.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --li-blue:   #0A66C2;
+      --li-hover:  #004182;
+      --accent:    #0A66C2;
+      --accent2:   #70B5F9;
+      --green:     #057642;
+      --green-bg:  #D4EDDA;
+      --amber:     #B45309;
+      --amber-bg:  #FEF3C7;
+      --red:       #CC1016;
+      --red-bg:    #FEE2E2;
+      --purple:    #6366F1;
+
+      --bg:        #F3F2EF;
+      --bg-white:  #FFFFFF;
+      --bg-card:   #FFFFFF;
+      --sidebar-bg:#FFFFFF;
+
+      --text:      #191919;
+      --text-2:    #666666;
+      --text-3:    #999999;
+      --border:    #E0DFDC;
+      --border2:   #C8C6C4;
+
+      --radius-sm: 6px;
+      --radius:    10px;
+      --radius-lg: 16px;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow:    0 2px 8px rgba(0,0,0,0.10);
+      --shadow-lg: 0 4px 20px rgba(0,0,0,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+      width: 240px; min-height: 100vh;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 100; box-shadow: var(--shadow-sm);
+    }
+
+    .sidebar-top { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+
+    .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--li-blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 16px;
+    }
+    .logo-name { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+    .logo-sub  { font-size: 11px; color: var(--text-3); margin-left: 46px; }
+
+    .sidebar-nav { padding: 12px 8px; flex: 1; overflow-y: auto; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); padding: 12px 8px 6px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: var(--radius-sm);
+      font-size: 13.5px; font-weight: 500; color: var(--text-2);
+      cursor: pointer; transition: all 0.15s; margin-bottom: 1px;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { background: #EBF5FB; color: var(--li-blue); font-weight: 600; }
+    .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+    /* Credential status strip */
+    .cred-strip { padding: 12px 16px; border-top: 1px solid var(--border); }
+    .cred-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; }
+    .cred-label { font-size: 11.5px; color: var(--text-3); }
+    .cred-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-ok   { background: var(--green); }
+    .dot-warn { background: #F59E0B; }
+    .dot-off  { background: var(--border2); }
+
+    /* ── Main ────────────────────────────────────────────── */
+    .main { margin-left: 240px; flex: 1; padding: 24px 32px; }
+
+    /* ── Top bar ─────────────────────────────────────────── */
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .page-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+    .page-sub   { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+
+    .topbar-right { display: flex; gap: 10px; align-items: center; }
+
+    /* Next post badge */
+    .next-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 100px;
+      border: 1px solid var(--border2); background: var(--bg-white);
+      font-size: 12px; font-weight: 500; color: var(--text-2);
+      box-shadow: var(--shadow-sm);
+    }
+    .next-badge-time { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--text); font-size: 14px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.75)} }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: 100px;
+      background: var(--li-blue); color: #fff; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; box-shadow: 0 2px 8px rgba(10,102,194,0.25);
+    }
+    .btn-primary:hover { background: var(--li-hover); box-shadow: 0 4px 16px rgba(10,102,194,0.35); transform: translateY(-1px); }
+
+    /* ── Schedule strip ──────────────────────────────────── */
+    .schedule-strip {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .slot-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      box-shadow: var(--shadow-sm); transition: all 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .slot-card:hover { box-shadow: var(--shadow); }
+    .slot-card.published { border-left: 3px solid var(--green); }
+    .slot-card.live      { border-left: 3px solid var(--li-blue); background: #F0F7FF; }
+    .slot-card.pending   { border-left: 3px solid var(--border2); }
+    .slot-card.failed    { border-left: 3px solid var(--red); }
+
+    .slot-num  { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-3); text-transform: uppercase; margin-bottom: 4px; }
+    .slot-time { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .slot-title{ font-size: 11.5px; color: var(--text-2); line-height: 1.4; margin-bottom: 8px;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 600;
+    }
+    .badge-pub   { background: var(--green-bg); color: var(--green); }
+    .badge-live  { background: #DBEAFE; color: var(--li-blue); }
+    .badge-pend  { background: var(--bg); color: var(--text-3); border: 1px solid var(--border); }
+    .badge-fail  { background: var(--red-bg); color: var(--red); }
+    .badge-ready { background: #EDE9FE; color: var(--purple); }
+
+    .slot-btn {
+      margin-top: 8px; width: 100%; padding: 5px;
+      border: 1px solid var(--border2); border-radius: var(--radius-sm);
+      background: transparent; font-size: 11px; font-weight: 600; color: var(--li-blue);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .slot-btn:hover { background: var(--li-blue); color: #fff; border-color: var(--li-blue); }
+
+    /* ── Stats ───────────────────────────────────────────── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+
+    .stat-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+      box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+    .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+    .stat-sub   { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+    /* ── Grid ────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; margin-bottom: 24px; }
+    .grid-1 { margin-bottom: 24px; }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .card-body  { padding: 16px 20px; }
+    .card-tag   { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: var(--bg); color: var(--text-3); border: 1px solid var(--border); }
+
+    /* ── Post rows ───────────────────────────────────────── */
+    #posts-list { display: flex; flex-direction: column; gap: 0; }
+
+    .post-row {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      transition: background 0.15s; cursor: pointer;
+    }
+    .post-row:last-child { border-bottom: none; }
+    .post-row:hover { background: #F8F8F8; }
+
+    .post-rank-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--li-blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+    }
+
+    .post-info { flex: 1; min-width: 0; }
+    .post-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+    .post-title { font-size: 13.5px; font-weight: 600; color: var(--text); line-height: 1.4; flex: 1; min-width: 0; }
+    .post-meta  { font-size: 11.5px; color: var(--text-3); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .post-hook  { font-size: 12px; color: var(--text-2); margin-top: 4px; font-style: italic; line-height: 1.5; }
+
+    .post-time-badge { font-size: 11px; font-weight: 600; color: var(--li-blue); background: #EBF5FB; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+
+    /* ── Post full view ──────────────────────────────────── */
+    .post-full-text {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px 16px; font-size: 13px; color: var(--text); line-height: 1.7;
+      white-space: pre-line; margin-top: 10px; max-height: 280px; overflow-y: auto;
+    }
+    .post-expanded { display: none; padding: 0 20px 14px; }
+    .post-row.open + .post-expanded { display: block; }
+
+    /* ── Activity log ────────────────────────────────────── */
+    #logs-list { display: flex; flex-direction: column; gap: 0; max-height: 340px; overflow-y: auto; }
+
+    .log-row {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 20px; border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .log-row:last-child { border-bottom: none; }
+    .log-time  { color: var(--text-3); font-variant-numeric: tabular-nums; min-width: 42px; padding-top: 1px; }
+    .log-pill  { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pill-green  { background: var(--green-bg); color: var(--green); }
+    .pill-blue   { background: #DBEAFE; color: var(--li-blue); }
+    .pill-amber  { background: var(--amber-bg); color: var(--amber); }
+    .pill-red    { background: var(--red-bg); color: var(--red); }
+    .pill-gray   { background: var(--bg); color: var(--text-3); }
+    .log-msg   { color: var(--text-2); flex: 1; line-height: 1.5; }
+
+    /* ── Analytics section ───────────────────────────────── */
+    .analytics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .analytic-mini  {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px 16px; text-align: center;
+    }
+    .analytic-val   { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--li-blue); }
+    .analytic-label { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    /* ── Recs ────────────────────────────────────────────── */
+    #recs-list { display: flex; flex-direction: column; gap: 8px; }
+    .rec-row {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 12px; background: #F0F7FF; border-radius: var(--radius-sm);
+      border: 1px solid #BFDBFE; font-size: 12.5px; color: var(--text-2); line-height: 1.55;
+    }
+    .rec-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Topics ──────────────────────────────────────────── */
+    #topics-list { display: flex; flex-direction: column; gap: 0; }
+    .topic-row {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .topic-row:last-child { border-bottom: none; }
+    .topic-num  { width: 20px; font-weight: 700; color: var(--text-3); flex-shrink: 0; padding-top: 1px; }
+    .topic-info { flex: 1; min-width: 0; }
+    .topic-title{ font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .topic-meta { font-size: 11.5px; color: var(--text-3); display: flex; gap: 8px; flex-wrap: wrap; }
+    .topic-angle{ font-size: 11.5px; color: var(--li-blue); margin-top: 2px; font-style: italic; }
+    .topic-score{ font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #EBF5FB; color: var(--li-blue); flex-shrink: 0; }
+
+    /* ── Empty states ────────────────────────────────────── */
+    .empty { text-align: center; padding: 32px 20px; color: var(--text-3); }
+    .empty-icon  { font-size: 32px; margin-bottom: 8px; }
+    .empty-title { font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+    .empty-desc  { font-size: 12.5px; line-height: 1.6; }
+
+    /* ── Sections ────────────────────────────────────────── */
+    section { display: none; }
+    section.active { display: block; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 18px; background: var(--text); color: #fff;
+      border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow-lg); transform: translateY(80px); opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 9999;
+      max-width: 320px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Mobile Nav Styles ──────────────────────────────── */
+    .mobile-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 60px; background: var(--sidebar-bg);
+      border-top: 1px solid var(--border);
+      grid-template-columns: repeat(5, 1fr);
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .mobile-nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-2); font-size: 10px; font-weight: 500; text-decoration: none;
+      cursor: pointer; gap: 4px; transition: color 0.15s;
+    }
+    .mobile-nav-item:hover { color: var(--text); }
+    .mobile-nav-item.active { color: var(--li-blue); font-weight: 600; }
+    .mobile-nav-icon { font-size: 18px; }
+    .mobile-nav-text { display: block; }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 1100px) { .schedule-strip { grid-template-columns: repeat(3,1fr); } .stats-row { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .mobile-nav { display: grid; }
+      .main { margin-left: 0; padding: 16px; margin-bottom: 75px; }
+      .schedule-strip { grid-template-columns: 1fr 1fr; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .topbar-right { width: 100%; justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ──────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo-row">
+        <div class="logo-icon">in</div>
+        <span class="logo-name">{{ brand }}</span>
+      </div>
+      <div class="logo-sub">AI Content Automation</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">Overview</div>
+      <a class="nav-item active" onclick="showSection('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a class="nav-item" onclick="showSection('posts')">
+        <span class="nav-icon">📝</span> Today's Posts
+      </a>
+      <a class="nav-item" onclick="showSection('topics')">
+        <span class="nav-icon">🔍</span> Trend Discovery
+      </a>
+      <a class="nav-item" onclick="showSection('analytics')">
+        <span class="nav-icon">📈</span> Analytics
+      </a>
+      <a class="nav-item" onclick="showSection('logs')">
+        <span class="nav-icon">📋</span> Activity Log
+      </a>
+
+      <div class="nav-label">Run Pipeline</div>
+      <a class="nav-item" onclick="trigger('research')"><span class="nav-icon">🔍</span> Research Now</a>
+      <a class="nav-item" onclick="trigger('generate')"><span class="nav-icon">✍️</span> Generate Posts</a>
+      <a class="nav-item" onclick="trigger('full')">   <span class="nav-icon">⚡</span> Full Pipeline</a>
+
+      <div class="nav-label">Publish Slot</div>
+      <a class="nav-item" onclick="trigger('publish1')"><span class="nav-icon">1️⃣</span> Post 1 — 09:00</a>
+      <a class="nav-item" onclick="trigger('publish2')"><span class="nav-icon">2️⃣</span> Post 2 — 10:30</a>
+      <a class="nav-item" onclick="trigger('publish3')"><span class="nav-icon">3️⃣</span> Post 3 — 11:45</a>
+      <a class="nav-item" onclick="trigger('publish4')"><span class="nav-icon">4️⃣</span> Post 4 — 13:30</a>
+      <a class="nav-item" onclick="trigger('publish5')"><span class="nav-icon">5️⃣</span> Post 5 — 16:00</a>
+    </nav>
+
+    <div class="cred-strip">
+      <div class="cred-row"><span class="cred-label">Gemini AI</span><div class="cred-dot dot-off" id="cred-gemini"></div></div>
+      <div class="cred-row"><span class="cred-label">LinkedIn</span><div class="cred-dot dot-off" id="cred-linkedin"></div></div>
+      <div class="cred-row"><span class="cred-label">Twitter/X</span><div class="cred-dot dot-off" id="cred-twitter"></div></div>
+      <div class="cred-row"><span class="cred-label">Reddit</span><div class="cred-dot dot-off" id="cred-reddit"></div></div>
+    </div>
+  </aside>
+
+  <!-- ── Mobile Bottom Nav ───────────────────────────── -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-item active" onclick="showSection('dashboard', this)">
+      <span class="mobile-nav-icon">📊</span>
+      <span class="mobile-nav-text">Dashboard</span>
+    </div>
+    <div class="mobile-nav-item" onclick="showSection('posts', this)">
+      <span class="mobile-nav-icon">📝</span>
+      <span class="mobile-nav-text">Posts</span>
+    </div>
+    <div class="mobile-nav-item" onclick="showSection('topics', this)">
+      <span class="mobile-nav-icon">🔍</span>
+      <span class="mobile-nav-text">Trends</span>
+    </div>
+    <div class="mobile-nav-item" onclick="showSection('analytics', this)">
+      <span class="mobile-nav-icon">📈</span>
+      <span class="mobile-nav-text">Analytics</span>
+    </div>
+    <div class="mobile-nav-item" onclick="showSection('logs', this)">
+      <span class="mobile-nav-icon">📋</span>
+      <span class="mobile-nav-text">Logs</span>
+    </div>
+  </nav>
+
+  <!-- ── Main ─────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <section id="section-dashboard" class="active">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Command Center</div>
+          <div class="page-sub">Autonomous LinkedIn content engine — 5 posts/day, fully automated</div>
+        </div>
+        <div class="topbar-right">
+          <div class="next-badge">
+            <div class="live-dot"></div>
+            <span>Next post:</span>
+            <span class="next-badge-time" id="next-post-label">—</span>
+            <span id="countdown" style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--text)">—</span>
+          </div>
+          <button class="btn-primary" onclick="trigger('full')">⚡ Run Pipeline</button>
+        </div>
+      </div>
+
+      <!-- 5-slot schedule strip -->
+      <div class="schedule-strip" id="schedule-strip">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Published</div>
+          <div class="stat-value" id="stat-posts">—</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Likes</div>
+          <div class="stat-value" id="stat-likes">—</div>
+          <div class="stat-sub">Across all posts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Comments</div>
+          <div class="stat-value" id="stat-comments">—</div>
+          <div class="stat-sub">Engagement</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Likes/Post</div>
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-sub">Performance indicator</div>
+        </div>
+      </div>
+
+      <!-- Posts + Logs -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">📝 Today's 5 Posts</div>
+            <span class="card-tag" id="posts-count-tag">0 posts</span>
+          </div>
+          <div id="posts-list">
+            <div class="empty"><div class="empty-icon">✍️</div><div class="empty-title">No posts generated yet</div><div class="empty-desc">Click "Run Pipeline" or wait for the 8:30 AM generation</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">⚡ Live Activity</div>
+            <span class="card-tag" id="log-count-tag">0 events</span>
+          </div>
+          <div id="logs-list">
+            <div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No activity yet</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Posts Detail -->
+    <section id="section-posts">
+      <div class="topbar" style="margin-bottom:20px;">
+        <div>
+          <div class="page-title">Today's Posts</div>
+          <div class="page-sub">Full LinkedIn post text with hooks, CTAs, and hashtags</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">📝 All 5 Posts</div>
+          <span class="card-tag" id="posts-detail-count">0 posts</span>
+        </div>
+        <div id="posts-detail-list">
+          <div class="empty"><div class="empty-icon">📝</div><div class="empty-title">No posts yet</div><div class="empty-desc">Run the pipeline to generate today's content</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trend Discovery -->
+    <section id="section-topics">
+      <div class="topbar" style="margin-bottom:20px;">
+        <div>
+          <div class="page-title">Trend Discovery</div>
+          <div class="page-sub">Today's selected topics with LinkedIn engagement scores</div>
+        </div>
+        <button class="btn-primary" onclick="trigger('research')">🔍 Refresh Research</button>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">🔍 Selected Topics</div>
+          <span class="card-tag" id="topics-count">0 topics</span>
+        </div>
+        <div id="topics-list">
+          <div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No research yet</div><div class="empty-desc">Run research to see today's trending topics</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analytics -->
+    <section id="section-analytics">
+      <div class="topbar" style="margin-bottom:20px;">
+        <div>
+          <div class="page-title">Analytics & Growth</div>
+          <div class="page-sub">Post performance metrics and AI-powered optimization recommendations</div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card">
+          <div class="card-head"><div class="card-title">📊 Overall Performance</div></div>
+          <div class="card-body">
+            <div class="analytics-grid">
+              <div class="analytic-mini"><div class="analytic-val" id="a-posts">—</div><div class="analytic-label">Posts</div></div>
+              <div class="analytic-mini"><div class="analytic-val" id="a-likes">—</div><div class="analytic-label">Likes</div></div>
+              <div class="analytic-mini"><div class="analytic-val" id="a-comments">—</div><div class="analytic-label">Comments</div></div>
+              <div class="analytic-mini"><div class="analytic-val" id="a-shares">—</div><div class="analytic-label">Shares</div></div>
+              <div class="analytic-mini"><div class="analytic-val" id="a-impressions">—</div><div class="analytic-label">Impressions</div></div>
+              <div class="analytic-mini"><div class="analytic-val" id="a-avg-likes">—</div><div class="analytic-label">Avg Likes</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">🤖 AI Recommendations</div></div>
+          <div class="card-body">
+            <div id="recs-list">
+              <div class="empty" style="padding:20px 0"><div class="empty-desc">Publish more posts to get personalized optimization tips</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">📝 Recent Posts Performance</div></div>
+        <div id="analytics-posts-list">
+          <div class="empty"><div class="empty-icon">📈</div><div class="empty-title">No data yet</div><div class="empty-desc">Analytics populate after posts are published</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Logs -->
+    <section id="section-logs">
+      <div class="topbar" style="margin-bottom:20px;">
+        <div>
+          <div class="page-title">Activity Log</div>
+          <div class="page-sub">Full automation event history</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">📋 All Events</div>
+          <span class="card-tag" id="all-logs-count">0 events</span>
+        </div>
+        <div id="all-logs-list" style="max-height:600px;overflow-y:auto;">
+          <div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No events</div></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n);
+
+// ── Section nav ──────────────────────────────────────────────────────────────
+function showSection(name, clickedEl) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  $(`section-${name}`).classList.add('active');
+  
+  // Reset active classes
+  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(el => el.classList.remove('active'));
+  
+  if (clickedEl) {
+    clickedEl.classList.add('active');
+    // Sync sidebar
+    document.querySelectorAll('.nav-item').forEach(el => {
+      if (el.textContent.toLowerCase().includes(name.toLowerCase())) {
+        el.classList.add('active');
+      }
+    });
+  } else if (event) {
+    const item = event.target.closest('.nav-item, .mobile-nav-item');
+    if (item) {
+      item.classList.add('active');
+      const otherClass = item.classList.contains('nav-item') ? '.mobile-nav-item' : '.nav-item';
+      document.querySelectorAll(otherClass).forEach(el => {
+        if (el.textContent.toLowerCase().includes(name.toLowerCase())) {
+          el.classList.add('active');
+        }
+      });
+    }
+  }
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg, ms=3500) {
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+// ── Next post countdown ───────────────────────────────────────────────────────
+const POST_TIMES = {{ post_times | tojson }};
+
+function getNextPostInfo() {
+  const now = new Date();
+  for (const t of POST_TIMES) {
+    const [h,m] = t.split(':').map(Number);
+    const target = new Date(now); target.setHours(h,m,0,0);
+    if (target > now) return { label: t, diff: target-now };
+  }
+  // All passed — next is tomorrow's first
+  const [h,m] = POST_TIMES[0].split(':').map(Number);
+  const target = new Date(now); target.setDate(target.getDate()+1); target.setHours(h,m,0,0);
+  return { label: POST_TIMES[0]+" (tomorrow)", diff: target-now };
+}
+
+function updateCountdown() {
+  const { label, diff } = getNextPostInfo();
+  const h = Math.floor(diff/3600000), mi = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+  $('next-post-label').textContent = label;
+  $('countdown').textContent = `${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+setInterval(updateCountdown, 1000); updateCountdown();
+
+// ── Status dots ───────────────────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const d = await fetch('/api/status').then(r=>r.json());
+    const set = (id, ok) => { const el=$(id); if(el) el.className='cred-dot '+(ok?'dot-ok':'dot-warn'); };
+    set('cred-gemini',  d.has_gemini);
+    set('cred-linkedin',d.has_linkedin);
+    set('cred-twitter', d.has_twitter);
+    set('cred-reddit',  d.has_reddit);
+  } catch(e){}
+}
+
+// ── Schedule strip ────────────────────────────────────────────────────────────
+function renderSlots(posts) {
+  const strip = $('schedule-strip');
+  const now = new Date();
+
+  strip.innerHTML = POST_TIMES.map((t,i) => {
+    const [h,m] = t.split(':').map(Number);
+    const slotTime = new Date(now); slotTime.setHours(h,m,0,0);
+    const post = posts && posts[i];
+    const status = post?.status || 'pending';
+    const isPast = slotTime < now;
+
+    let cls='pending', badgeClass='badge-pend', badgeText='Pending';
+    if (status==='published') { cls='published'; badgeClass='badge-pub'; badgeText='Published'; }
+    else if (status==='ready' && !isPast) { cls='live'; badgeClass='badge-ready'; badgeText='Ready'; }
+    else if (status==='publish_failed') { cls='failed'; badgeClass='badge-fail'; badgeText='Failed'; }
+    else if (isPast && status!=='published') { badgeText='Missed'; }
+
+    return `<div class="slot-card ${cls}">
+      <div class="slot-num">Post ${i+1}</div>
+      <div class="slot-time">${t}</div>
+      <div class="slot-title">${(post?.title||'Awaiting generation...').slice(0,55)}</div>
+      <span class="slot-badge ${badgeClass}">${badgeText}</span>
+      <button class="slot-btn" onclick="trigger('publish${i+1}')">Publish Now</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Posts list ────────────────────────────────────────────────────────────────
+function renderPostsList(posts, containerId) {
+  const c = $(containerId);
+  if (!posts?.length) {
+    c.innerHTML = `<div class="empty"><div class="empty-icon">✍️</div><div class="empty-title">No posts yet</div><div class="empty-desc">Run the pipeline to generate today's content</div></div>`;
+    return;
+  }
+  $('posts-count-tag').textContent = `${posts.length} posts`;
+  $('posts-detail-count') && ($('posts-detail-count').textContent = `${posts.length} posts`);
+
+  c.innerHTML = posts.map((p,i) => {
+    const statusMap={published:'badge-pub',ready:'badge-ready',publish_failed:'badge-fail'};
+    const bc=statusMap[p.status]||'badge-pend';
+    const sl=(p.status||'pending').replace(/_/g,' ');
+    return `<div class="post-row" onclick="togglePost(this,${i})">
+      <div class="post-rank-num">${i+1}</div>
+      <div class="post-info">
+        <div class="post-title-row">
+          <div class="post-title">${p.title?.slice(0,70)||'Untitled'}</div>
+          <span class="post-time-badge">${p.post_time||'?'}</span>
+          <span class="slot-badge ${bc}" style="font-size:10px">${sl}</span>
+        </div>
+        <div class="post-meta">
+          <span>📰 ${p.source||''}</span>
+          <span>📊 LI Score: ${p.engagement_score||'?'}/10</span>
+          <span>✍️ ${p.post_type||''}</span>
+          <span>👤 ${p.target_audience||''}</span>
+          <span>${p.word_count||0} words</span>
+        </div>
+        ${p.hook?`<div class="post-hook">"${p.hook.slice(0,100)}"</div>`:''}
+      </div>
+    </div>
+    <div class="post-expanded" id="post-exp-${i}">
+      <div class="post-full-text">${p.linkedin_text||p.full_post||''}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-primary" style="padding:5px 14px;font-size:12px" onclick="trigger('publish${i+1}')">Publish This Post</button>
+        <span style="font-size:11px;color:var(--text-3);padding-top:6px">${p.hashtags?.slice(0,60)||''}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePost(el, i) {
+  const exp = $(`post-exp-${i}`);
+  if (!exp) return;
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.post-row').forEach(r => r.classList.remove('open'));
+  document.querySelectorAll('.post-expanded').forEach(e => e.style.display='none');
+  if (!isOpen) { el.classList.add('open'); exp.style.display='block'; }
+}
+
+// ── Detail posts ──────────────────────────────────────────────────────────────
+function renderPostsDetail(posts) {
+  const c = $('posts-detail-list');
+  if (!posts?.length) { c.innerHTML=`<div class="empty"><div class="empty-title">No posts</div></div>`; return; }
+  c.innerHTML = posts.map((p,i)=>`
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700">Post ${i+1} — ${p.post_time}</div>
+        <span class="post-time-badge">${p.post_type||''}</span>
+        <span style="font-size:11px;color:var(--text-3)">${p.word_count} words</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;">Topic: ${p.title?.slice(0,80)}</div>
+      <div class="post-full-text">${p.linkedin_text||p.full_post||''}</div>
+      <div style="margin-top:8px;font-size:11.5px;color:var(--li-blue);">${p.hashtags||''}</div>
+    </div>
+  `).join('');
+}
+
+// ── Topics ────────────────────────────────────────────────────────────────────
+async function loadTopics() {
+  try {
+    const d = await fetch('/api/research/today').then(r=>r.json());
+    const topics = d.topics || [];
+    $('topics-count').textContent = `${topics.length} topics`;
+    const c = $('topics-list');
+    if (!topics.length) { c.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No research yet</div><div class="empty-desc">Run research to discover today's trending topics</div></div>`; return; }
+    c.innerHTML = topics.map((t,i)=>`<div class="topic-row">
+      <div class="topic-num">${i+1}</div>
+      <div class="topic-info">
+        <div class="topic-title">${(t.title||'').slice(0,90)}</div>
+        <div class="topic-meta"><span>📰 ${t.source}</span><span>🎯 ${t.target_audience||'all'}</span></div>
+        ${t.viral_angle?`<div class="topic-angle">${t.viral_angle.slice(0,100)}</div>`:''}
+        ${t.hook_idea?`<div style="font-size:11.5px;color:var(--text-2);margin-top:3px;font-style:italic">"${t.hook_idea.slice(0,80)}"</div>`:''}
+      </div>
+      <div class="topic-score">${t.linkedin_engagement_score||0}/10</div>
+    </div>`).join('');
+  } catch(e) {}
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+const LOG_PILLS = {
+  RESEARCH_DONE:'pill-green', CONTENT_DONE:'pill-green', PUBLISH_DONE:'pill-green',
+  POST_PUBLISHED:'pill-green', ANALYTICS_UPDATED:'pill-green',
+  RESEARCH_START:'pill-blue', CONTENT_START:'pill-blue', SCHEDULER_START:'pill-blue',
+  STEP_START:'pill-blue', SCHEDULE_DONE:'pill-blue', PUBLISH_SLOT:'pill-blue',
+  STEP_ERROR:'pill-red', POST_FAILED:'pill-red',
+};
+
+function renderLogs(logs, containerId) {
+  const c=$(containerId);
+  if (!logs?.length) { c.innerHTML=`<div class="empty"><div class="empty-title">No events yet</div></div>`; return; }
+  c.innerHTML = logs.map(log=>{
+    const ts=new Date(log.timestamp);
+    const time=ts.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
+    const type=log.event_type||'INFO';
+    const pill=LOG_PILLS[type]||'pill-gray';
+    return `<div class="log-row">
+      <span class="log-time">${time}</span>
+      <span class="log-pill ${pill}">${type.replace(/_/g,' ')}</span>
+      <span class="log-msg">${log.message||JSON.stringify(log).slice(0,80)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+async function loadAnalytics() {
+  try {
+    const d = await fetch('/api/analytics').then(r=>r.json());
+    $('stat-posts').textContent    = fmt(d.total_posts||0);
+    $('stat-likes').textContent    = fmt(d.total_likes||0);
+    $('stat-comments').textContent = fmt(d.total_comments||0);
+    $('stat-avg').textContent      = d.avg_likes||0;
+    $('a-posts').textContent       = fmt(d.total_posts||0);
+    $('a-likes').textContent       = fmt(d.total_likes||0);
+    $('a-comments').textContent    = fmt(d.total_comments||0);
+    $('a-shares').textContent      = fmt(d.total_shares||0);
+    $('a-impressions').textContent = fmt(d.total_impressions||0);
+    $('a-avg-likes').textContent   = d.avg_likes||0;
+
+    const ins = d.insights;
+    if (ins?.recommendations?.length) {
+      $('recs-list').innerHTML = ins.recommendations.map(r=>`
+        <div class="rec-row"><div class="rec-icon">💡</div><div>${r}</div></div>
+      `).join('');
+    }
+
+    if (d.recent_posts?.length) {
+      $('analytics-posts-list').innerHTML = d.recent_posts.map(p=>`
+        <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">${(p.title||'').slice(0,70)}</div>
+            <div style="font-size:11.5px;color:var(--text-3)">${p.published_at?.slice(0,10)||''} · ${p.post_type||''}</div>
+          </div>
+          <div style="display:flex;gap:14px;font-size:12px;font-weight:600;flex-shrink:0;">
+            <span style="color:var(--li-blue)">❤️ ${p.likes||0}</span>
+            <span style="color:#666">💬 ${p.comments||0}</span>
+            <span style="color:#666">↗️ ${p.shares||0}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e){}
+}
+
+// ── Main data loader ──────────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const d = await fetch('/api/posts/today').then(r=>r.json());
+    const posts = d.posts||[];
+    renderSlots(posts);
+    renderPostsList(posts, 'posts-list');
+    renderPostsDetail(posts);
+  } catch(e){}
+
+  try {
+    const logs = await fetch('/api/logs').then(r=>r.json());
+    $('log-count-tag').textContent = `${logs.length} events`;
+    $('all-logs-count').textContent = `${logs.length} events`;
+    renderLogs(logs.slice(0,12), 'logs-list');
+    renderLogs(logs, 'all-logs-list');
+  } catch(e){}
+
+  loadTopics();
+  loadAnalytics();
+  loadStatus();
+}
+
+// ── Trigger ───────────────────────────────────────────────────────────────────
+async function trigger(step) {
+  showToast(`⚡ ${step} triggered...`);
+  try {
+    const r = await fetch(`/api/run/${step}`, {method:'POST'});
+    const d = await r.json();
+    if (d.error) { showToast('Error: '+d.error); return; }
+    [3000,10000,30000].forEach(ms => setTimeout(loadAll, ms));
+  } catch(e){ showToast('Failed to connect'); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

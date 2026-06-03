@@ -95,9 +95,10 @@ class LinkedInAgent:
         post_id = self.publish(post)
 
         if post_id:
+            from datetime import timezone
             post["linkedin_post_id"] = post_id
             post["status"]           = "published"
-            post["published_at"]     = datetime.now().isoformat()
+            post["published_at"]     = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             log_run_event("POST_PUBLISHED", {
                 "message": f"Slot {slot+1} published: {post['title'][:60]}",
                 "slot": slot + 1,
@@ -158,8 +159,8 @@ class LinkedInAgent:
 
     def _save_posts(self, posts: list[dict]):
         Config.ensure_dirs()
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = Config.get_today_str()
         out = Config.POSTS_DIR / f"{today}_posts.json"
         with open(out, "w", encoding="utf-8") as f:
-            json.dump({"date": today, "run_at": datetime.now().isoformat(), "posts": posts},
-                      f, indent=2, ensure_ascii=False)
+            json.dump({"date": today, "run_at": Config.get_now().isoformat(), "posts": posts},
+                       f, indent=2, ensure_ascii=False)

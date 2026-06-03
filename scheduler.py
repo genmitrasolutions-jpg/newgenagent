@@ -73,7 +73,7 @@ def run_schedule():
             logger.error("No posts to schedule")
             return
 
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = Config.get_today_str()
         tz    = pytz.timezone(Config.TIMEZONE)
 
         for i, post in enumerate(posts):
@@ -87,7 +87,7 @@ def run_schedule():
         Config.ensure_dirs()
         out = Config.POSTS_DIR / f"{today}_posts.json"
         with open(out, "w", encoding="utf-8") as f:
-            json.dump({"date": today, "run_at": datetime.now().isoformat(), "posts": posts},
+            json.dump({"date": today, "run_at": Config.get_now().isoformat(), "posts": posts},
                       f, indent=2, ensure_ascii=False)
 
         log_run_event("SCHEDULE_DONE", {

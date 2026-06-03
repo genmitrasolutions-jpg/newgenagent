@@ -433,33 +433,22 @@ Return ONLY a valid JSON object:
         return " ".join(all_tags[:4])
 
     def _save(self, posts: list[dict]):
-
         Config.ensure_dirs()
-
-        today = datetime.now().strftime("%Y-%m-%d")
-
+        today = Config.get_today_str()
         out = Config.POSTS_DIR / f"{today}_posts.json"
-
         with open(out, "w", encoding="utf-8") as f:
-
-            json.dump({"date": today, "run_at": datetime.now().isoformat(), "posts": posts},
-
+            json.dump({"date": today, "run_at": Config.get_now().isoformat(), "posts": posts},
                       f, indent=2, ensure_ascii=False)
-
         logger.info(f"Posts saved -> {out}")
 
     @staticmethod
-
     def load_today() -> list[dict] | None:
-
-        today = datetime.now().strftime("%Y-%m-%d")
-
+        today = Config.get_today_str()
         p = Config.POSTS_DIR / f"{today}_posts.json"
-
         if p.exists():
-
-            with open(p, encoding="utf-8") as f:
-
-                return json.load(f).get("posts")
-
+            try:
+                with open(p, encoding="utf-8") as f:
+                    return json.load(f).get("posts", [])
+            except Exception:
+                pass
         return None

@@ -276,7 +276,7 @@ class ResearchAgent:
         for i, a in enumerate(articles[:60]):
             items.append(f"{i+1}. [{a['source']}] {a['title']}\n   {a['summary'][:200]}")
 
-        prompt = f"""You are a LinkedIn growth expert. Today is {datetime.now().strftime('%B %d, %Y')}.
+        prompt = f"""You are a LinkedIn growth expert. Today is {Config.get_now().strftime('%B %d, %Y')}.
 
 I need to find the TOP {Config.POSTS_PER_DAY} topics from this list that will generate maximum LinkedIn engagement.
 
@@ -364,18 +364,21 @@ Return ONLY a valid JSON array:
 
     def _save(self, topics: list[dict]):
         Config.ensure_dirs()
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = Config.get_today_str()
         out = Config.POSTS_DIR / f"{today}_research.json"
         with open(out, "w", encoding="utf-8") as f:
-            json.dump({"date": today, "run_at": datetime.now().isoformat(), "topics": topics},
-                      f, indent=2, ensure_ascii=False)
+            json.dump({"date": today, "run_at": Config.get_now().isoformat(), "topics": topics},
+                       f, indent=2, ensure_ascii=False)
         logger.info(f"Research saved -> {out}")
 
     @staticmethod
     def load_today() -> list[dict] | None:
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = Config.get_today_str()
         p = Config.POSTS_DIR / f"{today}_research.json"
         if p.exists():
-            with open(p, encoding="utf-8") as f:
-                return json.load(f).get("topics")
+            try:
+                with open(p, encoding="utf-8") as f:
+                    return json.load(f).get("topics")
+            except Exception:
+                pass
         return None

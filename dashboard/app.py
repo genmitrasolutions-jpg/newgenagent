@@ -49,13 +49,13 @@ def create_app() -> Flask:
             "brand":        Config.BRAND_NAME,
             "niche":        Config.CONTENT_NICHE,
             "post_times":   Config.POST_TIMES,
-            "server_time":  datetime.now().isoformat(),
+            "server_time":  Config.get_now().isoformat(),
         })
 
     # ── Today's posts ─────────────────────────────────────────────────────────
     @app.route("/api/posts/today")
     def api_posts_today():
-        return jsonify(_load_posts(datetime.now().strftime("%Y-%m-%d")))
+        return jsonify(_load_posts(Config.get_today_str()))
 
     @app.route("/api/posts/<date>")
     def api_posts_date(date):
@@ -65,8 +65,9 @@ def create_app() -> Flask:
     @app.route("/api/posts/history")
     def api_history():
         history = []
+        now_local = Config.get_now()
         for i in range(14):
-            date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+            date = (now_local - timedelta(days=i)).strftime("%Y-%m-%d")
             d = _load_posts(date)
             if d.get("posts"):
                 history.append({
@@ -112,7 +113,7 @@ def create_app() -> Flask:
     # ── Today's research ──────────────────────────────────────────────────────
     @app.route("/api/research/today")
     def api_research_today():
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = Config.get_today_str()
         p = Config.POSTS_DIR / f"{today}_research.json"
         if p.exists():
             with open(p, encoding="utf-8") as f:
@@ -159,7 +160,7 @@ def create_app() -> Flask:
     # ── Health ────────────────────────────────────────────────────────────────
     @app.route("/health")
     def health():
-        return jsonify({"status": "ok", "time": datetime.now().isoformat()})
+        return jsonify({"status": "ok", "time": Config.get_now().isoformat()})
 
     import os
     if os.getenv("START_SCHEDULER", "false").lower() == "true":

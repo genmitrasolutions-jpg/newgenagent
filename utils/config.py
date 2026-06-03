@@ -83,6 +83,21 @@ class Config:
         return cls.has_linkedin()
 
     @classmethod
+    def get_timezone(cls):
+        import pytz
+        return pytz.timezone(cls.TIMEZONE)
+
+    @classmethod
+    def get_now(cls):
+        import pytz
+        from datetime import datetime
+        return datetime.now(pytz.timezone(cls.TIMEZONE))
+
+    @classmethod
+    def get_today_str(cls) -> str:
+        return cls.get_now().strftime("%Y-%m-%d")
+
+    @classmethod
     def ensure_dirs(cls):
         for d in [cls.DATA_DIR, cls.POSTS_DIR, cls.LOGS_DIR]:
             d.mkdir(parents=True, exist_ok=True)

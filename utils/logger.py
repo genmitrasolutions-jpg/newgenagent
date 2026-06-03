@@ -59,8 +59,9 @@ def log_run_event(event_type: str, data: dict):
         from utils.config import Config
         Config.ensure_dirs()
         events_file = Config.LOGS_DIR / "run_events.jsonl"
+        from datetime import timezone
         record = {
-            "timestamp":  datetime.now().isoformat(),
+            "timestamp":  datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "event_type": event_type,
             **data,
         }

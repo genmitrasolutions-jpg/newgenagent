@@ -32,7 +32,7 @@ class Config:
 
     # ── Content settings ──────────────────────────────────
     TIMEZONE: str              = os.getenv("TIMEZONE", "Asia/Kolkata")
-    BRAND_NAME: str            = os.getenv("BRAND_NAME", "Tech Stuff")
+    BRAND_NAME: str            = os.getenv("BRAND_NAME", "GenMitra")
     CONTENT_NICHE: str         = os.getenv("CONTENT_NICHE", "Artificial Intelligence, Technology, Business, Startups")
     POSTS_PER_DAY: int         = 5
 

@@ -1,4 +1,4 @@
-# 🤖 AI Instagram News Automation System
+# 🤖 GenMitra — AI Content Automation System
 
 > **Fully autonomous AI system** that researches top AI news daily, generates premium Instagram carousel posts, and publishes them automatically at 9:00 AM — zero manual effort required.
 
@@ -173,7 +173,7 @@ Edit `.env` to customize:
 | `TIMEZONE` | `Asia/Kolkata` | Your timezone for scheduling |
 | `PUBLISH_TIME` | `09:00` | Daily publish time (24h) |
 | `POSTS_PER_DAY` | `5` | Number of posts to publish daily |
-| `BRAND_NAME` | `AI Daily` | Brand name shown on slides |
+| `BRAND_NAME` | `GenMitra` | Brand name shown on slides |
 
 ---
 

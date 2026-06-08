@@ -32,7 +32,7 @@ logger = get_logger("main")
 
 def print_banner():
     print("\n" + "=" * 58)
-    print("  LinkedIn AI Content Automation System")
+    print("  GenMitra — AI Content Automation System")
     print("  Powered by Google Gemini + LinkedIn API")
     print("=" * 58)
 

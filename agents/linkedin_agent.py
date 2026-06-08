@@ -14,7 +14,7 @@ from utils.logger import get_logger, log_run_event
 logger = get_logger("linkedin")
 
 UGC_POSTS_URL = f"{Config.LINKEDIN_API_BASE}/ugcPosts"
-SHARES_URL     = f"{Config.LINKEDIN_API_BASE}/shares"
+ARTICLES_URL  = f"{Config.LINKEDIN_API_BASE}/articles"
 
 
 class LinkedInAgent:
@@ -34,24 +34,72 @@ class LinkedInAgent:
 
     def publish(self, post: dict) -> str | None:
         """
-        Publish a LinkedIn text post.
+        Publish as a LinkedIn Article.
+        Falls back to a regular UGC post if Articles API is unavailable.
         Returns the LinkedIn post URN on success, None on failure.
         """
         if not Config.can_publish():
             logger.warning("LinkedIn credentials not configured — skipping publish")
             return None
 
-        text = post.get("linkedin_text", "")
-        if not text:
+        title = post.get("article_title") or post.get("title", "")
+        body  = post.get("linkedin_text", "")
+
+        if not body:
             logger.error("No linkedin_text found in post — skipping")
             return None
 
+        # ── Try Articles API first ────────────────────────────────────────────
+        article_id = self._publish_article(title, body)
+        if article_id:
+            return article_id
+
+        # ── Fallback: regular UGC text post ───────────────────────────────────
+        logger.warning("Articles API failed — falling back to UGC text post")
+        return self._publish_ugc_post(f"{title}\n\n{body}")
+
+    def _publish_article(self, title: str, body: str) -> str | None:
+        """Publish via LinkedIn Articles API (long-form)."""
+        payload = {
+            "author": self.author,
+            "lifecycleState": "PUBLISHED",
+            "title": {"text": title[:200]},
+            "content": [
+                {
+                    "type": "PARAGRAPH",
+                    "content": [
+                        {"type": "TEXT", "text": body[:40000]}
+                    ]
+                }
+            ]
+        }
+        try:
+            resp = requests.post(
+                ARTICLES_URL,
+                headers=self._headers,
+                json=payload,
+                timeout=20,
+            )
+            if resp.status_code in (200, 201):
+                post_id = resp.json().get("id", "")
+                logger.info(f"Article published: {post_id}")
+                return post_id
+            else:
+                err = resp.json().get("message", resp.text)
+                logger.warning(f"Articles API [{resp.status_code}]: {err}")
+                return None
+        except Exception as e:
+            logger.error(f"Articles API exception: {e}")
+            return None
+
+    def _publish_ugc_post(self, text: str) -> str | None:
+        """Fallback: publish as a regular UGC text post."""
         payload = {
             "author": self.author,
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": text[:3000]},  # LinkedIn 3000 char limit
+                    "shareCommentary": {"text": text[:3000]},
                     "shareMediaCategory": "NONE",
                 }
             },
@@ -59,7 +107,6 @@ class LinkedInAgent:
                 "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
             },
         }
-
         try:
             resp = requests.post(
                 UGC_POSTS_URL,
@@ -67,18 +114,16 @@ class LinkedInAgent:
                 json=payload,
                 timeout=20,
             )
-
             if resp.status_code in (200, 201):
                 post_id = resp.json().get("id", "")
-                logger.info(f"Published: {post_id}")
+                logger.info(f"UGC post published (fallback): {post_id}")
                 return post_id
             else:
                 err = resp.json().get("message", resp.text)
-                logger.error(f"LinkedIn API error [{resp.status_code}]: {err}")
+                logger.error(f"UGC API error [{resp.status_code}]: {err}")
                 return None
-
         except Exception as e:
-            logger.error(f"LinkedIn publish exception: {e}")
+            logger.error(f"UGC publish exception: {e}")
             return None
 
     # ── Run all scheduled posts ───────────────────────────────────────────────

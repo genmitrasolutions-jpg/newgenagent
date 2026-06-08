@@ -165,13 +165,13 @@ class ContentAgent:
         return self._generate_gemini(topic, slot) if self.gemini else self._fallback(topic, slot)
 
     def _generate_gemini(self, topic: dict, slot: int) -> dict:
-        post_type   = topic.get("post_type", "opinion")
-        viral_angle = topic.get("viral_angle", topic["title"])
-        hook_idea   = topic.get("hook_idea", "")
-        audience    = topic.get("target_audience", "professionals")
+        post_type    = topic.get("post_type", "opinion")
+        viral_angle  = topic.get("viral_angle", topic["title"])
+        hook_idea    = topic.get("hook_idea", "")
+        audience     = topic.get("target_audience", "professionals")
         slot_context = POST_SLOT_CONTEXT.get(slot, "daytime")
 
-        prompt = f"""You are a top LinkedIn creator with 500K+ followers writing a professional post for the brand '{Config.BRAND_NAME}'.
+        prompt = f"""You are a senior LinkedIn thought-leader writing a long-form ARTICLE for the brand '{Config.BRAND_NAME}'.
 
 TOPIC: {topic['title']}
 KEY ANGLE: {viral_angle}
@@ -179,31 +179,37 @@ HOOK IDEA: {hook_idea}
 POST TYPE: {post_type}
 AUDIENCE: {audience}
 NICHE: {Config.CONTENT_NICHE}
-POST SLOT: {slot_context} (verify the focus and style matches this slot!)
+SLOT CONTEXT: {slot_context}
 TODAY: {datetime.now().strftime('%B %d, %Y')}
 
 ARTICLE CONTEXT:
-{topic.get('summary', '')[:400]}
+{topic.get('summary', '')[:600]}
 
-LINKEDIN POST RULES:
-- Open with a strong PATTERN INTERRUPT hook starting with an emoji in the first 2 lines (e.g., `🚨 [Hook]`)
-- Use line breaks between every 1-2 sentences for clean white space
-- Keep paragraphs very short (1-2 sentences max each)
-- Explain why the update matters and include one insight or takeaway
-- Sound human, direct, confident — NOT corporate, avoid buzzwords like "In today's fast-paced world"
-- Do NOT output lists with em-dashes. If using lists, format as emoji-prefixed or numbered lines
-- End with an emoji-prefixed engagement question starting with `💡` occasionally (not in every post, but in most) to drive comments (e.g., `💡 [Engagement Question]`). If not using a question, write a strong concluding sentence.
-- Keep text short and clean (150-250 words total)
-- Never focus on or mention the same company more than twice per day unless it is major breaking news.
-- Do NOT write footers or hashtags in the text — those will be appended programmatically
+LINKEDIN ARTICLE RULES:
+- Write a proper long-form article (600-900 words)
+- Start with a punchy, bold TITLE (not clickbait — clear and insightful)
+- Introduction (2-3 short paragraphs) — hook the reader with a compelling angle or statistic
+- 3 clearly labeled sections with emoji-prefixed headings (e.g., `🔍 Why This Matters`)
+- Each section: 3-5 short paragraphs, conversational tone, insights and examples
+- Conclusion (2-3 paragraphs) — summarise the key takeaway and look ahead
+- End with a strong CTA — ask a question to drive comments
+- Tone: human, direct, expert — NOT corporate or buzzword-heavy
+- No em-dash lists. Use numbered points or emoji-prefixed bullets if needed
+- Do NOT write hashtags in the text — those will be appended separately
+- Do NOT write author signature — that will be appended separately
 
 Return ONLY a valid JSON object:
 {{
-  "hook": "<1-2 line pattern interrupt opener starting with an emoji>",
-  "body": "<full LinkedIn post body — formatted with line breaks using \n\n between paragraphs>",
-  "cta": "<engaging question starting with an emoji, or empty string if not using a question>",
-  "mentions": "<relevant company or creator @mentions if applicable, else empty string>",
-  "hashtags": "<3-5 relevant LinkedIn hashtags space-separated>",
+  "title": "<clear, compelling article title (8-12 words)>",
+  "introduction": "<2-3 paragraph intro with line breaks using \\n\\n>",
+  "sections": [
+    {{"heading": "<emoji + heading>", "content": "<3-5 paragraphs with \\n\\n between them>"}},
+    {{"heading": "<emoji + heading>", "content": "<3-5 paragraphs>"}},
+    {{"heading": "<emoji + heading>", "content": "<3-5 paragraphs>"}}
+  ],
+  "conclusion": "<2-3 paragraph wrap-up>",
+  "cta": "<engaging question starting with 💡>",
+  "hashtags": "<4-6 relevant LinkedIn hashtags space-separated>",
   "post_type": "{post_type}",
   "word_count": <approximate word count>
 }}"""
@@ -212,204 +218,153 @@ Return ONLY a valid JSON object:
             resp = self.gemini.generate_content(prompt)
             text = resp.text.strip()
             if "```" in text:
-                text = re.sub(r"^```(':json)'\n'", "", text)
-                text = re.sub(r"\n'```$", "", text)
+                text = re.sub(r"```json\s*", "", text)
+                text = re.sub(r"```\s*$", "", text).strip()
             data = json.loads(text)
             return self._build_post(topic, data, slot)
         except Exception as e:
-            logger.error(f"Gemini content failed: {e}")
+            logger.error(f"Gemini article generation failed: {e}")
             return self._fallback(topic, slot)
 
     def _build_post(self, topic: dict, data: dict, slot: int) -> dict:
 
-        hook      = data.get("hook", "").strip()
+        article_title = data.get("title", topic["title"]).strip()
+        introduction  = data.get("introduction", "").strip()
+        sections      = data.get("sections", [])
+        conclusion    = data.get("conclusion", "").strip()
+        cta           = data.get("cta", "").strip()
+        hashtags      = self._build_hashtags(topic, data.get("hashtags", ""))
 
-        body      = data.get("body", "").strip()
+        # ── Assemble full article body ────────────────────────
+        body_parts = []
+        if introduction:
+            body_parts.append(introduction)
 
-        cta       = data.get("cta", "").strip()
+        for sec in sections:
+            heading = sec.get("heading", "").strip()
+            content = sec.get("content", "").strip()
+            if heading:
+                body_parts.append(f"\n{heading}")
+            if content:
+                body_parts.append(content)
 
-        mentions  = data.get("mentions", "").strip()
-
-        hashtags  = self._build_hashtags(topic, data.get("hashtags", ""))
-
-        # Assemble full post text block
-
-        full_parts = []
-
-        if hook:
-
-            full_parts.append(hook)
-
-        if body:
-
-            full_parts.append(body)
+        if conclusion:
+            body_parts.append(f"\n{conclusion}")
 
         if cta:
+            body_parts.append(f"\n{cta}")
 
-            full_parts.append(cta)
+        full_body = "\n\n".join(body_parts).strip()
 
-        full_post = "\n\n".join(full_parts).strip()
-
-        # Assemble final LinkedIn post text
-
-        parts = [full_post]
-
-        if mentions:
-
-            parts.append(f"\n{mentions}")
-
-        parts.append(f"\n\n\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech updates.")
-
+        # ── Assemble final article text ───────────────────────
+        parts = [full_body]
+        parts.append(f"\n\n---\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech insights.")
         parts.append(f"\n{hashtags}")
 
         final_text = "\n".join(parts).strip()
 
         return {
-
-            "rank":          topic.get("rank", slot + 1),
-
-            "slot":          slot,
-
-            "post_time":     Config.POST_TIMES[slot] if slot < len(Config.POST_TIMES) else "09:00",
-
-            "title":         topic["title"],
-
-            "source":        topic.get("source", ""),
-
-            "url":           topic.get("url", ""),
-
-            "viral_angle":   topic.get("viral_angle", ""),
-
-            "post_type":     data.get("post_type", "opinion"),
-
-            "target_audience": topic.get("target_audience", "all"),
-
-            "hook":          hook,
-
-            "body":          body,
-
-            "full_post":     full_post,
-
-            "cta":           cta,
-
-            "mentions":      mentions,
-
-            "hashtags":      hashtags,
-
-            "linkedin_text": final_text,  # Ready-to-publish text
-
-            "word_count":    data.get("word_count", len(final_text.split())),
-
+            "rank":             topic.get("rank", slot + 1),
+            "slot":             slot,
+            "post_time":        Config.POST_TIMES[slot] if slot < len(Config.POST_TIMES) else "09:00",
+            "title":            article_title,
+            "source":           topic.get("source", ""),
+            "url":              topic.get("url", ""),
+            "viral_angle":      topic.get("viral_angle", ""),
+            "post_type":        data.get("post_type", "article"),
+            "target_audience":  topic.get("target_audience", "all"),
+            "hook":             introduction[:120] if introduction else "",
+            "body":             full_body,
+            "full_post":        full_body,
+            "cta":              cta,
+            "mentions":         "",
+            "hashtags":         hashtags,
+            "linkedin_text":    final_text,   # Full article body (for article API)
+            "article_title":    article_title, # Separate title field for Articles API
+            "word_count":       data.get("word_count", len(final_text.split())),
             "engagement_score": topic.get("linkedin_engagement_score", 5),
-
-            "status":        "ready",
-
-            "generated_at":  datetime.now().isoformat(),
-
-            "scheduled_for": None,
-
-            "published_at":  None,
-
+            "status":           "ready",
+            "generated_at":     datetime.now().isoformat(),
+            "scheduled_for":    None,
+            "published_at":     None,
             "linkedin_post_id": None,
-
-            "analytics":     {},
-
+            "analytics":        {},
         }
 
     # â”€â”€ Fallback (no Gemini) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _fallback(self, topic: dict, slot: int) -> dict:
-
-        title   = topic["title"]
-
-        source  = topic.get("source", "Tech News")
-
-        angle   = topic.get("viral_angle", "AI is reshaping business")
-
-        hook    = f"🚨 {title}"
-
-        body = (
-
-            f"Here's why this matters for the tech industry:\n\n"
-
-            f"The pace of change in technology is moving faster than ever.\n\n"
-
-            f"Early adopters of these updates are positioning themselves for major opportunities. "
-
-            f"Those who wait will be left playing catch-up.\n\n"
-
-            f"The goal is not just to keep up with these tech developments, but to actively grow with them."
-
-        )
-
-        cta = "💡 What do you think — is this a game-changer for the industry'"
-
+        title    = topic["title"]
+        source   = topic.get("source", "Tech News")
+        angle    = topic.get("viral_angle", "AI is reshaping business")
         hashtags = self._build_hashtags(topic, "")
 
-        full_post = f"{hook}\n\n{body}\n\n{cta}"
+        article_title = f"{title}"
 
-        final_parts = [
+        introduction = (
+            f"The tech world never sleeps — and this week's development around {title} is proof of that.\n\n"
+            f"Here's why professionals across every industry need to pay attention."
+        )
 
-            full_post,
+        section1 = (
+            f"🔍 What's Happening\n\n"
+            f"{angle}\n\n"
+            f"The pace of change in technology is accelerating faster than most organisations can adapt to."
+        )
 
-            f"\n\n\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech updates.",
+        section2 = (
+            f"💡 Why It Matters\n\n"
+            f"Early adopters of these shifts are positioning themselves for major opportunities.\n\n"
+            f"Those who wait will find themselves playing an expensive game of catch-up."
+        )
 
+        section3 = (
+            f"🚀 What You Should Do\n\n"
+            f"The goal is not just to keep up with these tech developments — it's to actively grow with them.\n\n"
+            f"Start by understanding the core change, then map it to your own work or business context."
+        )
+
+        conclusion = (
+            f"Change is not the threat — being unprepared is.\n\n"
+            f"The professionals and companies that thrive will be those who treat every major development "
+            f"as a signal to learn, adapt, and act."
+        )
+
+        cta = "💡 What do you think — how is this going to change your industry?"
+
+        full_body = "\n\n".join([introduction, section1, section2, section3, conclusion, cta])
+        final_text = "\n".join([
+            full_body,
+            f"\n\n---\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech insights.",
             f"\n{hashtags}"
-
-        ]
-
-        final_text = "\n".join(final_parts).strip()
+        ]).strip()
 
         return {
-
-            "rank":          topic.get("rank", slot + 1),
-
-            "slot":          slot,
-
-            "post_time":     Config.POST_TIMES[slot] if slot < len(Config.POST_TIMES) else "09:00",
-
-            "title":         title,
-
-            "source":        source,
-
-            "url":           topic.get("url", ""),
-
-            "viral_angle":   angle,
-
-            "post_type":     "opinion",
-
-            "target_audience": "all",
-
-            "hook":          hook,
-
-            "body":          body,
-
-            "full_post":     full_post,
-
-            "cta":           cta,
-
-            "mentions":      "",
-
-            "hashtags":      hashtags,
-
-            "linkedin_text": final_text,
-
-            "word_count":    len(final_text.split()),
-
+            "rank":             topic.get("rank", slot + 1),
+            "slot":             slot,
+            "post_time":        Config.POST_TIMES[slot] if slot < len(Config.POST_TIMES) else "09:00",
+            "title":            article_title,
+            "source":           source,
+            "url":              topic.get("url", ""),
+            "viral_angle":      angle,
+            "post_type":        "article",
+            "target_audience":  "all",
+            "hook":             introduction[:120],
+            "body":             full_body,
+            "full_post":        full_body,
+            "cta":              cta,
+            "mentions":         "",
+            "hashtags":         hashtags,
+            "linkedin_text":    final_text,
+            "article_title":    article_title,
+            "word_count":       len(final_text.split()),
             "engagement_score": topic.get("linkedin_engagement_score", 5),
-
-            "status":        "ready",
-
-            "generated_at":  datetime.now().isoformat(),
-
-            "scheduled_for": None,
-
-            "published_at":  None,
-
+            "status":           "ready",
+            "generated_at":     datetime.now().isoformat(),
+            "scheduled_for":    None,
+            "published_at":     None,
             "linkedin_post_id": None,
-
-            "analytics":     {},
-
+            "analytics":        {},
         }
 
     # â”€â”€ Hashtag builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

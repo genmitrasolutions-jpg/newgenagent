@@ -258,7 +258,7 @@ Return ONLY a valid JSON object:
 
             parts.append(f"\n{mentions}")
 
-        parts.append("\n\n\n🔥 Tech Stuff\nFollow for daily AI & Tech updates.")
+        parts.append(f"\n\n\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech updates.")
 
         parts.append(f"\n{hashtags}")
 
@@ -352,7 +352,7 @@ Return ONLY a valid JSON object:
 
             full_post,
 
-            "\n\n\n🔥 Tech Stuff\nFollow for daily AI & Tech updates.",
+            f"\n\n\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech updates.",
 
             f"\n{hashtags}"
 
@@ -428,7 +428,8 @@ Return ONLY a valid JSON object:
 
         gemini_list = [h.strip() for h in gemini_tags.split() if h.startswith("#")]
 
-        all_tags = list(dict.fromkeys(["#TechStuff"] + gemini_list + extra + BASE_HASHTAGS))
+        brand_tag = "#" + re.sub(r"\s+", "", Config.BRAND_NAME)
+        all_tags = list(dict.fromkeys([brand_tag] + gemini_list + extra + BASE_HASHTAGS))
 
         return " ".join(all_tags[:4])
 

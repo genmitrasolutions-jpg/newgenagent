@@ -171,7 +171,7 @@ class ContentAgent:
         audience     = topic.get("target_audience", "professionals")
         slot_context = POST_SLOT_CONTEXT.get(slot, "daytime")
 
-        prompt = f"""You are a senior LinkedIn thought-leader writing a long-form ARTICLE for the brand '{Config.BRAND_NAME}'.
+        prompt = f"""You are an elite LinkedIn content strategist writing high-authority posts for '{Config.BRAND_NAME}'.
 
 TOPIC: {topic['title']}
 KEY ANGLE: {viral_angle}
@@ -179,37 +179,54 @@ HOOK IDEA: {hook_idea}
 POST TYPE: {post_type}
 AUDIENCE: {audience}
 NICHE: {Config.CONTENT_NICHE}
-SLOT CONTEXT: {slot_context}
+SLOT: {slot_context}
 TODAY: {datetime.now().strftime('%B %d, %Y')}
 
-ARTICLE CONTEXT:
-{topic.get('summary', '')[:600]}
+CONTEXT:
+{topic.get('summary', '')[:500]}
 
-LINKEDIN ARTICLE RULES:
-- Write a proper long-form article (600-900 words)
-- Start with a punchy, bold TITLE (not clickbait — clear and insightful)
-- Introduction (2-3 short paragraphs) — hook the reader with a compelling angle or statistic
-- 3 clearly labeled sections with emoji-prefixed headings (e.g., `🔍 Why This Matters`)
-- Each section: 3-5 short paragraphs, conversational tone, insights and examples
-- Conclusion (2-3 paragraphs) — summarise the key takeaway and look ahead
-- End with a strong CTA — ask a question to drive comments
-- Tone: human, direct, expert — NOT corporate or buzzword-heavy
-- No em-dash lists. Use numbered points or emoji-prefixed bullets if needed
-- Do NOT write hashtags in the text — those will be appended separately
-- Do NOT write author signature — that will be appended separately
+POST STRUCTURE: Hook -> Insight -> Value -> CTA
 
-Return ONLY a valid JSON object:
+1. HOOK (lines 1-2):
+   - One bold punchy statement. No emoji.
+   - Specific beats generic. Surprising beats obvious.
+   - Good examples:
+     "Most AI tools fail not because of tech. Because of people."
+     "Nobody warns you about this side of scaling fast."
+     "The best leaders I know ask more than they answer."
+
+2. INSIGHT (3-5 short paragraphs):
+   - Deliver the core idea fast and clearly
+   - Use natural industry keywords (AI, automation, leadership, growth)
+   - 1-2 sentences per paragraph, blank line between each
+   - End with a punchy contrast pair:
+     "The shift is happening.
+     Most teams aren't ready."
+
+3. VALUE (1-2 lines):
+   - One clear memorable takeaway
+   - Something they would screenshot
+
+4. CTA (choose one format per post, rotate):
+   - Question:    "\u{1F4AD} [Question that drives comment]"
+   - Opinion ask: "\u{1F4A1} Agree or disagree - drop your view below."
+   - Share ask:   "\u{1F501} Share this if your team needs to hear it."
+
+POST RULES:
+- Total length: 100-150 words (mobile-friendly)
+- Short sentences, blank line between every paragraph
+- Natural keyword placement, NOT stuffed
+- High-authority, modern, professional tone
+- Human voice - no buzzwords: no 'game-changer', 'leverage', 'utilize', 'in today's fast-paced world'
+- 5-8 targeted hashtags: mix of broad (#AI #Leadership) and niche (#AIAgents #FutureOfWork)
+- Do NOT write footer or hashtags in the body - appended automatically
+
+Return ONLY valid JSON (no markdown, no extra text):
 {{
-  "title": "<clear, compelling article title (8-12 words)>",
-  "introduction": "<2-3 paragraph intro with line breaks using \\n\\n>",
-  "sections": [
-    {{"heading": "<emoji + heading>", "content": "<3-5 paragraphs with \\n\\n between them>"}},
-    {{"heading": "<emoji + heading>", "content": "<3-5 paragraphs>"}},
-    {{"heading": "<emoji + heading>", "content": "<3-5 paragraphs>"}}
-  ],
-  "conclusion": "<2-3 paragraph wrap-up>",
-  "cta": "<engaging question starting with 💡>",
-  "hashtags": "<4-6 relevant LinkedIn hashtags space-separated>",
+  "hook": "<1-2 line scroll-stopping opener, no emoji>",
+  "body": "<insight + value — \\n\\n between paragraphs — short punchy lines>",
+  "cta": "<one CTA line with emoji 💭 or 💡 or 🔁>",
+  "hashtags": "<5-8 targeted hashtags, mix broad+niche, no #GenMitra>",
   "post_type": "{post_type}",
   "word_count": <approximate word count>
 }}"""
@@ -223,64 +240,47 @@ Return ONLY a valid JSON object:
             data = json.loads(text)
             return self._build_post(topic, data, slot)
         except Exception as e:
-            logger.error(f"Gemini article generation failed: {e}")
+            logger.error(f"Gemini content failed: {e}")
             return self._fallback(topic, slot)
 
     def _build_post(self, topic: dict, data: dict, slot: int) -> dict:
 
-        article_title = data.get("title", topic["title"]).strip()
-        introduction  = data.get("introduction", "").strip()
-        sections      = data.get("sections", [])
-        conclusion    = data.get("conclusion", "").strip()
-        cta           = data.get("cta", "").strip()
-        hashtags      = self._build_hashtags(topic, data.get("hashtags", ""))
+        hook     = data.get("hook", "").strip()
+        body     = data.get("body", "").strip()
+        cta      = data.get("cta", "").strip()
+        hashtags = self._build_hashtags(topic, data.get("hashtags", ""))
 
-        # ── Assemble full article body ────────────────────────
-        body_parts = []
-        if introduction:
-            body_parts.append(introduction)
-
-        for sec in sections:
-            heading = sec.get("heading", "").strip()
-            content = sec.get("content", "").strip()
-            if heading:
-                body_parts.append(f"\n{heading}")
-            if content:
-                body_parts.append(content)
-
-        if conclusion:
-            body_parts.append(f"\n{conclusion}")
-
+        # Assemble post body
+        full_parts = []
+        if hook:
+            full_parts.append(hook)
+        if body:
+            full_parts.append(body)
         if cta:
-            body_parts.append(f"\n{cta}")
+            full_parts.append(cta)
+        full_post = "\n\n".join(full_parts).strip()
 
-        full_body = "\n\n".join(body_parts).strip()
-
-        # ── Assemble final article text ───────────────────────
-        parts = [full_body]
-        parts.append(f"\n\n---\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech insights.")
-        parts.append(f"\n{hashtags}")
-
-        final_text = "\n".join(parts).strip()
+        # Assemble final text with footer
+        final_text = f"{full_post}\n\n\u2014\n🔥 {Config.BRAND_NAME}\n{hashtags}"
 
         return {
             "rank":             topic.get("rank", slot + 1),
             "slot":             slot,
             "post_time":        Config.POST_TIMES[slot] if slot < len(Config.POST_TIMES) else "09:00",
-            "title":            article_title,
+            "title":            topic["title"],
             "source":           topic.get("source", ""),
             "url":              topic.get("url", ""),
             "viral_angle":      topic.get("viral_angle", ""),
-            "post_type":        data.get("post_type", "article"),
+            "post_type":        data.get("post_type", "opinion"),
             "target_audience":  topic.get("target_audience", "all"),
-            "hook":             introduction[:120] if introduction else "",
-            "body":             full_body,
-            "full_post":        full_body,
+            "hook":             hook,
+            "body":             body,
+            "full_post":        full_post,
             "cta":              cta,
             "mentions":         "",
             "hashtags":         hashtags,
-            "linkedin_text":    final_text,   # Full article body (for article API)
-            "article_title":    article_title, # Separate title field for Articles API
+            "linkedin_text":    final_text,
+            "article_title":    topic["title"],
             "word_count":       data.get("word_count", len(final_text.split())),
             "engagement_score": topic.get("linkedin_engagement_score", 5),
             "status":           "ready",
@@ -299,64 +299,39 @@ Return ONLY a valid JSON object:
         angle    = topic.get("viral_angle", "AI is reshaping business")
         hashtags = self._build_hashtags(topic, "")
 
-        article_title = f"{title}"
+        hook = "People rarely quit because of work."
 
-        introduction = (
-            f"The tech world never sleeps — and this week's development around {title} is proof of that.\n\n"
-            f"Here's why professionals across every industry need to pay attention."
-        )
-
-        section1 = (
-            f"🔍 What's Happening\n\n"
+        body = (
             f"{angle}\n\n"
-            f"The pace of change in technology is accelerating faster than most organisations can adapt to."
+            f"As AI and workplaces evolve faster than ever, one thing stays the same:\n\n"
+            f"Those who learn and adapt early create opportunities.\n\n"
+            f"Change isn't the threat.\n"
+            f"Being unprepared is."
         )
 
-        section2 = (
-            f"💡 Why It Matters\n\n"
-            f"Early adopters of these shifts are positioning themselves for major opportunities.\n\n"
-            f"Those who wait will find themselves playing an expensive game of catch-up."
-        )
+        cta = "💭 What do you think is the biggest challenge this creates for professionals?"
 
-        section3 = (
-            f"🚀 What You Should Do\n\n"
-            f"The goal is not just to keep up with these tech developments — it's to actively grow with them.\n\n"
-            f"Start by understanding the core change, then map it to your own work or business context."
-        )
-
-        conclusion = (
-            f"Change is not the threat — being unprepared is.\n\n"
-            f"The professionals and companies that thrive will be those who treat every major development "
-            f"as a signal to learn, adapt, and act."
-        )
-
-        cta = "💡 What do you think — how is this going to change your industry?"
-
-        full_body = "\n\n".join([introduction, section1, section2, section3, conclusion, cta])
-        final_text = "\n".join([
-            full_body,
-            f"\n\n---\n🔥 {Config.BRAND_NAME}\nFollow for daily AI & Tech insights.",
-            f"\n{hashtags}"
-        ]).strip()
+        full_post  = f"{hook}\n\n{body}\n\n{cta}"
+        final_text = f"{full_post}\n\n\u2014\n🔥 {Config.BRAND_NAME}\n{hashtags}"
 
         return {
             "rank":             topic.get("rank", slot + 1),
             "slot":             slot,
             "post_time":        Config.POST_TIMES[slot] if slot < len(Config.POST_TIMES) else "09:00",
-            "title":            article_title,
+            "title":            title,
             "source":           source,
             "url":              topic.get("url", ""),
             "viral_angle":      angle,
-            "post_type":        "article",
+            "post_type":        "opinion",
             "target_audience":  "all",
-            "hook":             introduction[:120],
-            "body":             full_body,
-            "full_post":        full_body,
+            "hook":             hook,
+            "body":             body,
+            "full_post":        full_post,
             "cta":              cta,
             "mentions":         "",
             "hashtags":         hashtags,
             "linkedin_text":    final_text,
-            "article_title":    article_title,
+            "article_title":    title,
             "word_count":       len(final_text.split()),
             "engagement_score": topic.get("linkedin_engagement_score", 5),
             "status":           "ready",
@@ -386,7 +361,7 @@ Return ONLY a valid JSON object:
         brand_tag = "#" + re.sub(r"\s+", "", Config.BRAND_NAME)
         all_tags = list(dict.fromkeys([brand_tag] + gemini_list + extra + BASE_HASHTAGS))
 
-        return " ".join(all_tags[:4])
+        return " ".join(all_tags[:7])
 
     def _save(self, posts: list[dict]):
         Config.ensure_dirs()

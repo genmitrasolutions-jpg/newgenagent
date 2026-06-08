@@ -208,9 +208,9 @@ POST STRUCTURE: Hook -> Insight -> Value -> CTA
    - Something they would screenshot
 
 4. CTA (choose one format per post, rotate):
-   - Question:    "\u{1F4AD} [Question that drives comment]"
-   - Opinion ask: "\u{1F4A1} Agree or disagree - drop your view below."
-   - Share ask:   "\u{1F501} Share this if your team needs to hear it."
+   - Question:    "💭 [Question that drives comment]"
+   - Opinion ask: "💡 Agree or disagree - drop your view below."
+   - Share ask:   "🔁 Share this if your team needs to hear it."
 
 POST RULES:
 - Total length: 100-150 words (mobile-friendly)
